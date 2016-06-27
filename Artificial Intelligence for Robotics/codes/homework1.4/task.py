@@ -24,8 +24,14 @@ def calculate():
     #ANY CODE ABOVE WILL CAUSE
     #HOMEWORK TO BE GRADED
     #INCORRECT
-  
-    p = []
+    x,y = len(colors),len(colors[0])  
+    pinit = 1.0 / (x * y) 
+    p = [[pinit for cell in row] for row in colors]
+    
+
+    for i in range(len(motions)):
+    	p = move(p,motions[i],p_move,x,y)
+    	p = sense(p,measurements[i],sensor_right,colors,x,y)
 
     #Your probability array must be printed 
     #with the following code.
@@ -33,3 +39,36 @@ def calculate():
     show(p)
     return p
 
+
+def move(prob,movement,p_move,x,y):
+	if movement == [0,0]:
+		return prob
+	else:
+		prob_stay = [[(1-p_move)*cell for cell in row] for row in prob]
+		prob_move = [[0 for cell in row] for row in prob]
+		for i in range(x):
+			for j in range(y):
+				prob_move[(i+movement[0])%x][(j+movement[1])%y] += prob[i][j] * p_move
+
+		for i in range(x):
+			for j in range(y):
+				prob[i][j] = prob_move[i][j] + prob_stay[i][j]
+
+	return prob
+
+
+def sense(prob,Z,sensor_right,colors,x,y):
+	for i in range(x):
+		for j in range(y):
+			if Z == colors[i][j]:
+				prob[i][j] *= sensor_right
+			else:
+				prob[i][j] *= 1 - sensor_right
+
+	normalizer = sum(sum(row) for row in prob)
+	prob = [[cell / normalizer for cell in row] for row in prob]
+	return prob
+
+
+if __name__ == '__main__':
+	print calculate()
