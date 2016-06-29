@@ -138,6 +138,32 @@ class robot:
     #           self.steering_noise
     #           self.distance_noise
 
+    def move(self,motions):
+        steering,distance = motions[0],motions[1]
+
+        steering2 = random.gauss(steering,self.steering_noise)
+        distance2 = random.gauss(distance,self.distance_noise)
+
+        res = robot(self.length)
+        res.set_noise(self.bearing_noise,self.steering_noise,self.distance_noise)
+
+        beta = tan(steering2) * distance2 / self.length
+        if abs(beta) < 0.001:
+           x = self.x + distance2 * cos(self.orientation)
+           y = self.y + distance2 * sin(self.orientation)
+           orientation = self.orientation
+
+        else:
+            R = distance2 / beta
+            cx =  self.x - sin(self.orientation) * R
+            cy =  self.y + cos(self.orientation) * R
+            orientation = (self.orientation + beta) % (2*pi)
+            x = cx + sin(orientation) * R
+            y = cy - cos(orientation) * R
+
+        res.set(x,y,orientation)
+        return res     
+
     # --------
     # sense: 
     #    
@@ -146,6 +172,16 @@ class robot:
     # and modify it so that it simulates bearing noise
     # according to
     #           self.bearing_noise
+
+    def sense(self,flag=1):
+        Z = []
+        for y,x in landmarks:
+            bearing = atan2(y-self.y,x-self.x) - self.orientation
+            bearing %= 2 * pi
+            if flag == 1:
+                bearing += random.gauss(0,self.bearing_noise)
+            Z.append(bearing)
+        return Z
 
     ############## ONLY ADD/MODIFY CODE ABOVE HERE ####################
 
