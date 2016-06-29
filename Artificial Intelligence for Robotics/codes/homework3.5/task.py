@@ -97,6 +97,10 @@ class robot:
 
         # ENTER CODE HERE
         # HINT: You will probably need to use the function atan2()
+        for y,x in landmarks:
+            bearing = atan2(y-self.y,x-self.x) - self.orientation
+            bearing %= 2 * pi
+            Z.append(bearing)
 
         return Z #Leave this line here. Return vector Z of 4 bearings.
     
