@@ -74,8 +74,66 @@ cost_step = 1
 # 3) ...return two grids: FIRST value and THEN policy.
 
 def stochastic_value():
+
     value = [[1000.0 for row in range(len(grid[0]))] for col in range(len(grid))]
     policy = [[' ' for row in range(len(grid[0]))] for col in range(len(grid))]
     
+    value[goal[0]][goal[1]] = 0.0
+    policy[goal[0]][goal[1]] = '*'
+
+    row = len(grid)
+    col = len(grid[0])
+
+    change = True
+
+    while True:
+
+    	if not change:
+    		break
+    	change = False
+
+    	for i in range(row-1,-1,-1):
+    		for j in range(col):
+    			if grid[i][j] == 1:
+    				continue
+    			for index,item in enumerate(delta):
+    				x = i + item[0]
+    				y = j + item[1]
+    				x2 = i + delta[index-1][0]
+    				y2 = j + delta[index-1][1]
+    				x3 = i + delta[(index+1)%4][0]
+    				y3 = j + delta[(index+1)%4][1]
+    				v = valueCompute(x,y,x2,y2,x3,y3,value,row,col)
+    				
+    				if v < value[i][j]:
+    					value[i][j] = v
+    					policy[i][j] = delta_name[index]
+    					change = True
+
+
+
     return value, policy
 
+
+
+def valueCompute(x,y,x2,y2,x3,y3,value,row,col):
+	possible = [[x,y,success_prob],[x2,y2,failure_prob],[x3,y3,failure_prob]]
+	v = 0
+	for px,py,prob in possible:
+		if 0 <= px < row and 0 <= py < col:
+			if grid[px][py] == 1:
+				v += collision_cost * prob
+			else:
+				v += value[px][py] * prob
+		else:
+			v += 100.0 * prob
+	return v + cost_step
+
+
+
+value,policy = stochastic_value()
+for rv in value:
+	print rv
+
+for rp in policy:
+	print rp
