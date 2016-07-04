@@ -27,6 +27,7 @@
 # it is not.
 
 from math import *
+from copy import deepcopy
 
 # Do not modify path inside your function.
 path=[[0, 0], 
@@ -63,10 +64,37 @@ def smooth(path, weight_data = 0.1, weight_smooth = 0.1, tolerance = 0.00001):
     #
 
     # deep copy
-    newpath = [[0 for row in range(len(path[0]))] for col in range(len(path))]
-    for i in range(len(path)):
-        for j in range(len(path[0])):
-            newpath[i][j] = path[i][j]
+    sp = deepcopy(path) # smoothing path
+    n = len(path)
+    while True:
+    	grad = [[0,0] for p in path]
+    	for index,point in enumerate(path):
+    		for j in xrange(2):
+    			grad[index][j] += weight_data * (point[j] - sp[index][j])
+    			grad[index][j] += weight_smooth * (sp[(index+1)%n][j] + sp[index-1][j] - 2 * sp[index][j])
+    			
+    	
+
+    	for i in xrange(n):
+    		for j in xrange(2):
+    			sp[i][j] += grad[i][j]
+
+    	if sum(sum(abs(a) for a in g) for g in grad) < tolerance:
+    		break
+
+    return sp
+
+
+def main():
+	for p,sp in zip(path,smooth(path,weight_data=0.5,weight_smooth=0.1)):
+		print '['+ ', '.join('%.3f'%x for x in p) +'] -> ['+ ', '.join('%.3f'%x for x in sp) +']'
+
+
+
+
+if __name__ == '__main__':
+	main()
+
 
 
 # thank you - EnTerr - for posting this on our discussion forum
