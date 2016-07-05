@@ -566,6 +566,62 @@ def online_slam(data, N, num_landmarks, motion_noise, measurement_noise):
     # Enter your code here!
     #
     #
+    dim = (1 + num_landmarks) * 2
+
+    Omega = matrix()
+    Omega.zero(dim,dim)
+    Omega.value[0][0] = 1.0
+    Omega.value[1][1] = 1.0
+
+    Xi = matrix()
+    Xi.zero(dim,1)
+    Xi.value[0][0] = world_size / 2.0
+    Xi.value[1][0] = world_size / 2.0
+
+    expand_list = [i for i in xrange(dim+2) if i != 2 and i != 3]
+    take_list = [i for i in xrange(2,dim+2)]
+
+    for item in data:
+
+        sense,move = item
+
+        for lmid,dx,dy in sense:
+            m = (1 + lmid) * 2
+            for b in range(2):
+                Omega.value[b][b] += 1.0 / measurement_noise
+                Omega.value[m+b][m+b] += 1.0 / measurement_noise
+                Omega.value[b][m+b] -= 1.0 / measurement_noise
+                Omega.value[m+b][b] -= 1.0 / measurement_noise
+            Xi.value[0][0] -= dx / measurement_noise
+            Xi.value[1][0] -= dy / measurement_noise
+            Xi.value[m+0][0] += dx / measurement_noise
+            Xi.value[m+1][0] += dy / measurement_noise
+
+        Omega = Omega.expand(dim+2,dim+2,expand_list,expand_list)
+        Xi = Xi.expand(dim+2,1,expand_list,[0])
+
+        for b in xrange(4):
+            Omega.value[b][b] += 1.0 / motion_noise
+        for b in xrange(2):
+            Omega.value[b][b+2] -= 1.0 / motion_noise
+            Omega.value[b+2][b] -= 1.0 / motion_noise
+            Xi.value[b][0] -= move[b] / motion_noise
+            Xi.value[b+2][0] += move[b] / motion_noise
+
+        Omega_sub = Omega.take(take_list,take_list)
+        Xi_sub = Xi.take(take_list,[0])
+
+        A = Omega.take([0,1],take_list)
+        B = Omega.take([0,1],[0,1])
+        C = Xi.take([0,1],[0])
+
+        AA = Omega
+        BB = Xi
+
+        Omega = Omega_sub - A.transpose() * B.inverse() * A
+        Xi = Xi_sub - A.transpose() * B.inverse() * C
+
+    mu = Omega.inverse() * Xi
     return mu, Omega # make sure you return both of these matrices to be marked correct.
 
 # --------------------------------
@@ -599,17 +655,16 @@ measurement_noise  = 2.0      # noise in the measurements
 distance           = 20.0     # distance by which robot (intends to) move each iteratation 
 
 
-# Uncomment the following three lines to run the full slam routine.
+# #Uncomment the following three lines to run the full slam routine.
 
-#data = make_data(N, num_landmarks, world_size, measurement_range, motion_noise, measurement_noise, distance)
-#result = slam(data, N, num_landmarks, motion_noise, measurement_noise)
-#print_result(N, num_landmarks, result)
+# data = make_data(N, num_landmarks, world_size, measurement_range, motion_noise, measurement_noise, distance)
+# result = slam(data, N, num_landmarks, motion_noise, measurement_noise)
+# print_result(N, num_landmarks, result)
 
-# Uncomment the following three lines to run the online_slam routine.
+#Uncomment the following three lines to run the online_slam routine.
 
-#data = make_data(N, num_landmarks, world_size, measurement_range, motion_noise, measurement_noise, distance)
-#result = online_slam(data, N, num_landmarks, motion_noise, measurement_noise)
-#print_result(1, num_landmarks, result[0])
-
+data = make_data(N, num_landmarks, world_size, measurement_range, motion_noise, measurement_noise, distance)
+result = online_slam(data, N, num_landmarks, motion_noise, measurement_noise)
+print_result(1, num_landmarks, result[0])
 
 
